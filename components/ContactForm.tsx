@@ -17,12 +17,25 @@ const formSchema = z.object({
   message: z.string().min(10, 'Bericht is te kort'),
 });
 
+type FormData = z.infer<typeof formSchema>;
+
+type EmailJSTemplateParams = {
+  [key: string]: unknown;
+  from_name: string;
+  from_email: string;
+  to_name: string;
+  phone: string;
+  message: string;
+};
+
 export default function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    emailjs.init("sjJ8kK6U9wFjY0zX9");
+    emailjs.init({
+      publicKey: "sjJ8kK6U9wFjY0zX9",
+    });
   }, []);
 
   const {
@@ -30,34 +43,40 @@ export default function ContactForm() {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm({
+  } = useForm<FormData>({
     resolver: zodResolver(formSchema),
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     
     try {
-      await emailjs.send(
+      const templateParams: EmailJSTemplateParams = {
+        from_name: data.name,
+        from_email: data.email,
+        to_name: 'Staycool Airconditioning',
+        phone: data.phone,
+        message: data.message,
+      };
+
+      const response = await emailjs.send(
         'service_1rruujp',
         'template_rkcpzhg',
-        {
-          from_name: data.name,
-          from_email: data.email,
-          phone: data.phone,
-          message: data.message,
-          to_name: 'Staycool Airconditioning',
-        },
+        templateParams,
         'OEKt02eVN9mwK-YCYb2Ea'
       );
 
-      toast({
-        title: "Aanvraag verzonden!",
-        description: "We nemen zo spoedig mogelijk contact met u op.",
-      });
-      
-      reset();
+      if (response.status === 200) {
+        toast({
+          title: "Aanvraag verzonden!",
+          description: "We nemen zo spoedig mogelijk contact met u op.",
+        });
+        reset();
+      } else {
+        throw new Error('Failed to send email');
+      }
     } catch (error) {
+      console.error('EmailJS error:', error);
       toast({
         title: "Er is iets misgegaan",
         description: "Probeer het later opnieuw of neem telefonisch contact op.",
@@ -77,7 +96,7 @@ export default function ContactForm() {
           className={errors.name ? 'border-red-500' : ''}
         />
         {errors.name && (
-          <p className="text-red-500 text-sm mt-1">{errors.name.message as string}</p>
+          <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
         )}
       </div>
 
@@ -89,7 +108,7 @@ export default function ContactForm() {
           className={errors.email ? 'border-red-500' : ''}
         />
         {errors.email && (
-          <p className="text-red-500 text-sm mt-1">{errors.email.message as string}</p>
+          <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
         )}
       </div>
 
@@ -101,7 +120,7 @@ export default function ContactForm() {
           className={errors.phone ? 'border-red-500' : ''}
         />
         {errors.phone && (
-          <p className="text-red-500 text-sm mt-1">{errors.phone.message as string}</p>
+          <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
         )}
       </div>
 
@@ -113,7 +132,7 @@ export default function ContactForm() {
           rows={4}
         />
         {errors.message && (
-          <p className="text-red-500 text-sm mt-1">{errors.message.message as string}</p>
+          <p className="text-red-500 text-sm mt-1">{errors.message.message}</p>
         )}
       </div>
 
