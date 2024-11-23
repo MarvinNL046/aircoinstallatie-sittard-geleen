@@ -28,14 +28,16 @@ type EmailJSTemplateParams = {
   message: string;
 };
 
+const SERVICE_ID = 'service_1rruujp';
+const TEMPLATE_ID = 'template_rkcpzhg';
+const PUBLIC_KEY = 'sjJ8kK6U9wFjY0zX9';
+
 export default function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    emailjs.init({
-      publicKey: "sjJ8kK6U9wFjY0zX9",
-    });
+    emailjs.init(PUBLIC_KEY);
   }, []);
 
   const {
@@ -60,10 +62,9 @@ export default function ContactForm() {
       };
 
       const response = await emailjs.send(
-        'service_1rruujp',
-        'template_rkcpzhg',
-        templateParams,
-        'OEKt02eVN9mwK-YCYb2Ea'
+        SERVICE_ID,
+        TEMPLATE_ID,
+        templateParams
       );
 
       if (response.status === 200) {
