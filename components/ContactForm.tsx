@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import emailjs from '@emailjs/browser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
+import { sendEmail } from '@/lib/email';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Naam is verplicht'),
@@ -19,26 +19,10 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-type EmailJSTemplateParams = {
-  [key: string]: unknown;
-  from_name: string;
-  from_email: string;
-  to_name: string;
-  phone: string;
-  message: string;
-};
-
-const SERVICE_ID = 'service_1rruujp';
-const TEMPLATE_ID = 'template_rkcpzhg';
-const PUBLIC_KEY = 'sjJ8kK6U9wFjY0zX9';
 
 export default function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    emailjs.init(PUBLIC_KEY);
-  }, []);
 
   const {
     register,
@@ -53,31 +37,20 @@ export default function ContactForm() {
     setIsSubmitting(true);
     
     try {
-      const templateParams: EmailJSTemplateParams = {
-        from_name: data.name,
-        from_email: data.email,
-        to_name: 'Staycool Airconditioning',
+      await sendEmail({
+        name: data.name,
+        email: data.email,
         phone: data.phone,
         message: data.message,
-      };
+      });
 
-      const response = await emailjs.send(
-        SERVICE_ID,
-        TEMPLATE_ID,
-        templateParams
-      );
-
-      if (response.status === 200) {
-        toast({
-          title: "Aanvraag verzonden!",
-          description: "We nemen zo spoedig mogelijk contact met u op.",
-        });
-        reset();
-      } else {
-        throw new Error('Failed to send email');
-      }
+      toast({
+        title: "Aanvraag verzonden!",
+        description: "We nemen zo spoedig mogelijk contact met u op.",
+      });
+      reset();
     } catch (error) {
-      console.error('EmailJS error:', error);
+      console.error('Form submission error:', error);
       toast({
         title: "Er is iets misgegaan",
         description: "Probeer het later opnieuw of neem telefonisch contact op.",
